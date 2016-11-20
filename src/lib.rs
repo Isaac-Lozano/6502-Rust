@@ -8,7 +8,7 @@ extern crate bitflags;
 #[cfg(test)]
 mod tests {
     use cpu6502::CPU6502;
-    use memory::{SimpleMemory, RWMemGeneric};
+    use memory::{SimpleMemory, Memory};
 
     use std::io::prelude::*;
     use std::fs::File;
@@ -31,7 +31,7 @@ mod tests {
         mem.set(0xFF03, 0x00 as u8);
         mem.set(0xFF04, 0xFF as u8);
 
-        let mut cpu = CPU6502::new(&mut mem);
+        let mut cpu = CPU6502::new(mem);
         cpu.reset();
         println!("{:?}\n", cpu);
         cpu.run(1).unwrap();
@@ -47,7 +47,7 @@ mod tests {
         let mut mem = SimpleMemory::new();
         let mut file = File::open("test_data/6502_functional_test.bin").unwrap();
         file.read(&mut mem.mem).unwrap();
-        let mut cpu = CPU6502::new(&mut mem);
+        let mut cpu = CPU6502::new(mem);
 
         let mut cycle_count = 0;
         let mut last_pc = 0x0000;

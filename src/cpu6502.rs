@@ -1,4 +1,4 @@
-use memory::{RWMem};
+use memory::{Memory};
 
 use opcode::{FetchType, Operation, Opcode, OP_TABLE};
 
@@ -206,7 +206,7 @@ pub type CPU6502Result<T> = Result<T, CPU6502Error>;
  ***********/
 /* Bread and butter
  */
-pub struct CPU6502<'a>
+pub struct CPU6502<M>
 {
     /* Registers */
     pub x: u8,
@@ -217,15 +217,15 @@ pub struct CPU6502<'a>
     pub ps: PS,
 
     /* Memory obj */
-    pub memory: &'a mut (RWMem + 'a),
+    pub memory: M,
 
     /* Stats data */
     pub cycles: u32,
 }
 
-impl<'a> CPU6502<'a>
+impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
 {
-    pub fn new<T: RWMem + 'a>(mem: &'a mut T) -> CPU6502<'a>
+    pub fn new(mem: M) -> CPU6502<M>
     {
         let mut cpu = CPU6502
         {
@@ -1261,7 +1261,7 @@ impl<'a> CPU6502<'a>
     }
 }
 
-impl<'a> fmt::Debug for CPU6502<'a>
+impl<M> fmt::Debug for CPU6502<M>
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result
     {

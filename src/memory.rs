@@ -1,13 +1,13 @@
 const NUM_PAGES: usize = 0x100;
 const PAGE_SIZE: usize = 0x100;
 
-/****************
- * RWMemGeneric *
- ****************/
+/**********
+ * Memory *
+ **********/
 /* Lets us get u8 or u16 from
  * mem as needed
  */
-pub trait RWMemGeneric<T>
+pub trait Memory<T>
 {
     fn get_without_mm(&mut self, addr: u16) -> T;
     fn set_without_mm(&mut self, addr: u16, val: T);
@@ -23,7 +23,7 @@ pub trait RWMemGeneric<T>
     }
 }
 
-impl<T> RWMemGeneric<u16> for T where T:RWMemGeneric<u8>
+impl<T> Memory<u16> for T where T:Memory<u8>
 {
     fn get(&mut self, addr: u16) -> u16
     {
@@ -52,8 +52,6 @@ impl<T> RWMemGeneric<u16> for T where T:RWMemGeneric<u8>
     }
 }
 
-pub trait RWMem: RWMemGeneric<u8> + RWMemGeneric<u16> {}
-
 pub struct SimpleMemory
 {
     pub mem: [u8; NUM_PAGES * PAGE_SIZE],
@@ -67,7 +65,7 @@ impl SimpleMemory
     }
 }
 
-impl RWMemGeneric<u8> for SimpleMemory
+impl Memory<u8> for SimpleMemory
 {
     fn get_without_mm(&mut self, addr: u16) -> u8
     {
@@ -79,5 +77,3 @@ impl RWMemGeneric<u8> for SimpleMemory
         self.mem[addr as usize] = val;
     }
 }
-
-impl RWMem for SimpleMemory {}
