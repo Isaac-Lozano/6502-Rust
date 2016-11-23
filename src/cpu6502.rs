@@ -220,7 +220,7 @@ pub struct CPU6502<M>
     pub memory: M,
 
     /* Stats data */
-    pub cycles: u32,
+    pub cycles: u64,
 }
 
 impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
@@ -1256,7 +1256,7 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
         }
 
         let cycles = op_el.cycles + additional_cycles;
-        self.cycles += cycles;
+        self.cycles += cycles as u64;
         Ok(cycles)
     }
 }
