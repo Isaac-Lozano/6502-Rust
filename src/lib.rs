@@ -6,7 +6,7 @@
 //! Basic usage is:
 //!
 //! ```no_run
-//! extern crate r6502
+//! extern crate r6502;
 //! use r6502::cpu6502::CPU6502;
 //! use r6502::memory::SimpleMemory;
 //!
