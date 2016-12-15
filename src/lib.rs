@@ -1,3 +1,27 @@
+//! This library is an emulator for the 6502 CPU. It includes support for a
+//! generic memory mapper so that many different systems can be emulated with
+//! this base.
+//!
+//! # Examples
+//! Basic usage is:
+//!
+//! ```no_run
+//! extern crate r6502
+//! use r6502::cpu6502::CPU6502;
+//! use r6502::memory::SimpleMemory;
+//!
+//! fn main()
+//! {
+//!     let mut mem = SimpleMemory::new();
+//!     /* Initialize memory */
+//!     let mut cpu = CPU6502::new(mem);
+//!     loop
+//!     {
+//!         cpu.run(1).unwrap();
+//!     }
+//! }
+//! ```
+
 pub mod cpu6502;
 pub mod memory;
 pub mod opcode;

@@ -1,3 +1,4 @@
+//! This module emulates the 6502 CPU.
 use memory::{Memory};
 
 use opcode::{FetchType, Operation, Opcode, OP_TABLE};
@@ -11,6 +12,7 @@ const CPU6502_IRQ: u16 = 0xFFFE;
 
 const CPU6502_STACK: u16 = 0x0100;
 
+/// A bitflags object that represents the processor status.
 bitflags!
 {
     pub flags PS: u8 {
@@ -206,6 +208,7 @@ pub type CPU6502Result<T> = Result<T, CPU6502Error>;
  ***********/
 /* Bread and butter
  */
+/// 6502 CPU emulator
 pub struct CPU6502<M>
 {
     /* Registers */
@@ -225,6 +228,11 @@ pub struct CPU6502<M>
 
 impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
 {
+    /// Returns a new CPU6502<M>.
+    ///
+    /// # `Input`
+    /// Takes in an object that implements the Memory trait. This object acts as
+    /// the memory mapper for the cpu.
     pub fn new(mem: M) -> CPU6502<M>
     {
         let mut cpu = CPU6502
@@ -242,6 +250,10 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
         cpu
     }
 
+    /// Runs the cpu for at least `cycles` cycles.
+    ///
+    /// Will run instructions until the amount of cycles run passes `cycles`.
+    /// Running this with `cycles` = 1 will run a single instruction.
     pub fn run(&mut self, cycles: u32) -> CPU6502Result<u32>
     {
         let mut passed: u32 = 0;
@@ -256,26 +268,28 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
     }
 
     /* Utility functions I guess? */
+    /// Triggers a reset in the CPU.
     pub fn reset(&mut self)
     {
-        self.pc = self.memory.get(CPU6502_RESET)
+        self.pc = self.memory.read(CPU6502_RESET)
     }
 
+    /// Triggers a NMI in the CPU.
     pub fn nmi(&mut self)
     {
-        self.pc = self.memory.get(CPU6502_NMI)
+        self.pc = self.memory.read(CPU6502_NMI)
     }
 
     fn push(&mut self, value: u8)
     {
-        self.memory.set(CPU6502_STACK | self.sp as u16, value);
+        self.memory.write(CPU6502_STACK | self.sp as u16, value);
         self.sp = self.sp.wrapping_sub(1);
     }
 
     fn pop(&mut self) -> u8
     {
         self.sp = self.sp.wrapping_add(1);
-        self.memory.get(CPU6502_STACK | self.sp as u16)
+        self.memory.read(CPU6502_STACK | self.sp as u16)
     }
 
     /* Opcode implementations */
@@ -324,7 +338,7 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
             },
             _ =>
             {
-                self.memory.set(addr, tmp);
+                self.memory.write(addr, tmp);
             },
         }
     }
@@ -491,7 +505,7 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
         let ps_bits = self.ps.bits;
         self.push(ps_bits);
         self.ps.insert(CPU6502_FLAG_I);
-        self.pc = self.memory.get(CPU6502_IRQ);
+        self.pc = self.memory.read(CPU6502_IRQ);
     }
 
     fn bvc(&mut self, src: u8, additional_cycles: &mut u32)
@@ -591,7 +605,7 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
         src = src.wrapping_sub(1);
         self.ps.set_sign(src);
         self.ps.set_zero(src);
-        self.memory.set(addr, src);
+        self.memory.write(addr, src);
     }
 
     fn dex(&mut self)
@@ -620,7 +634,7 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
         src = src.wrapping_add(1);
         self.ps.set_sign(src);
         self.ps.set_zero(src);
-        self.memory.set(addr, src);
+        self.memory.write(addr, src);
     }
 
     fn inx(&mut self)
@@ -686,7 +700,7 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
             },
             _ =>
             {
-                self.memory.set(addr, tmp);
+                self.memory.write(addr, tmp);
             },
         }
     }
@@ -766,7 +780,7 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
             },
             _ =>
             {
-                self.memory.set(addr, tmp);
+                self.memory.write(addr, tmp);
             },
         }
     }
@@ -795,7 +809,7 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
             },
             _ =>
             {
-                self.memory.set(addr, tmp);
+                self.memory.write(addr, tmp);
             },
         }
     }
@@ -855,17 +869,17 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
 
     fn sta(&mut self, addr: u16)
     {
-        self.memory.set(addr, self.a);
+        self.memory.write(addr, self.a);
     }
 
     fn stx(&mut self, addr: u16)
     {
-        self.memory.set(addr, self.x);
+        self.memory.write(addr, self.x);
     }
 
     fn sty(&mut self, addr: u16)
     {
-        self.memory.set(addr, self.y);
+        self.memory.write(addr, self.y);
     }
 
     fn tax(&mut self)
@@ -909,9 +923,10 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
     }
 
     /* Meat and bones */
+    /// Runs a single instruction.
     pub fn run_opcode(&mut self) -> CPU6502Result<u32>
     {
-        let op_val: u8 = self.memory.get(self.pc);
+        let op_val: u8 = self.memory.read(self.pc);
         let op_el: Opcode = OP_TABLE[op_val as usize];
         let mut additional_cycles = 0;
         let mut src: u8 = 0;
@@ -926,42 +941,42 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
             },
             FetchType::Immediate =>
             {
-                src = self.memory.get(self.pc + 1);
+                src = self.memory.read(self.pc + 1);
                 self.pc += 2;
             },
             FetchType::ZeroPage =>
             {
-                let addr_u8: u8 = self.memory.get(self.pc + 1);
+                let addr_u8: u8 = self.memory.read(self.pc + 1);
                 addr = addr_u8 as u16;
-                src = self.memory.get(addr);
+                src = self.memory.read(addr);
                 self.pc += 2;
             },
             FetchType::ZeroPageX =>
             {
-                let addr_u8: u8 = self.memory.get(self.pc + 1);
+                let addr_u8: u8 = self.memory.read(self.pc + 1);
                 addr = (addr_u8.wrapping_add(self.x)) as u16;
-                src = self.memory.get(addr);
+                src = self.memory.read(addr);
                 self.pc += 2;
             },
             FetchType::ZeroPageY =>
             {
-                let addr_u8: u8 = self.memory.get(self.pc + 1);
+                let addr_u8: u8 = self.memory.read(self.pc + 1);
                 addr = (addr_u8.wrapping_add(self.y)) as u16;
-                src = self.memory.get(addr);
+                src = self.memory.read(addr);
                 self.pc += 2;
             },
             FetchType::Absolute =>
             {
-                addr = self.memory.get(self.pc + 1);
-                src = self.memory.get(addr);
+                addr = self.memory.read(self.pc + 1);
+                src = self.memory.read(addr);
                 self.pc += 3;
             },
             FetchType::AbsoluteX =>
             {
-                let absolute: u16 = self.memory.get(self.pc + 1);
+                let absolute: u16 = self.memory.read(self.pc + 1);
                 let result: (u16, bool) = absolute.overflowing_add(self.x as u16);
                 addr = result.0;
-                src = self.memory.get(addr);
+                src = self.memory.read(addr);
 
                 /* if an overflow occurs */
                 if result.1
@@ -972,10 +987,10 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
             },
             FetchType::AbsoluteY =>
             {
-                let absolute: u16 = self.memory.get(self.pc + 1);
+                let absolute: u16 = self.memory.read(self.pc + 1);
                 let result: (u16, bool) = absolute.overflowing_add(self.y as u16);
                 addr = result.0;
-                src = self.memory.get(addr);
+                src = self.memory.read(addr);
 
                 /* if an overflow occurs */
                 if result.1
@@ -987,27 +1002,27 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
             FetchType::Indirect =>
             {
                 /* TODO: 6502 bug */
-                let absolute: u16 = self.memory.get(self.pc + 1);
-                addr = self.memory.get(absolute);
+                let absolute: u16 = self.memory.read(self.pc + 1);
+                addr = self.memory.read(absolute);
                 self.pc += 3;
             },
             FetchType::IndirectX =>
             {
                 /* TODO: 6502 bug */
-                let addr_u8: u8 = self.memory.get(self.pc + 1);
+                let addr_u8: u8 = self.memory.read(self.pc + 1);
                 let indirect_addr = (addr_u8.wrapping_add(self.x)) as u16;
-                addr = self.memory.get(indirect_addr);
-                src = self.memory.get(addr);
+                addr = self.memory.read(indirect_addr);
+                src = self.memory.read(addr);
                 self.pc += 2;
             },
             FetchType::IndirectY =>
             {
                 /* TODO: 6502 bug */
-                let indirect_addr: u8 = self.memory.get(self.pc + 1);
-                let preindexed_addr: u16 = self.memory.get(indirect_addr as u16);
+                let indirect_addr: u8 = self.memory.read(self.pc + 1);
+                let preindexed_addr: u16 = self.memory.read(indirect_addr as u16);
                 let result: (u16, bool) = preindexed_addr.overflowing_add(self.y as u16);
                 addr = result.0;
-                src = self.memory.get(addr);
+                src = self.memory.read(addr);
 
                 /* if an overflow occurs */
                 if result.1
@@ -1265,7 +1280,7 @@ impl<M> fmt::Debug for CPU6502<M>
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result
     {
-//        let op: u8 = self.memory.get_without_mm(self.pc);
+//        let op: u8 = self.memory.read_without_mm(self.pc);
 //        try!(write!(fmt, "OP: 0x{:02X}\n", op));
         try!(write!(fmt, " X: 0x{:02X}     Y: 0x{:02X}\n", self.x, self.y));
         try!(write!(fmt, " A: 0x{:02X}    PS: {}\n", self.a, self.ps));
