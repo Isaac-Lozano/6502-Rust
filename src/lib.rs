@@ -7,14 +7,14 @@
 //!
 //! ```no_run
 //! extern crate r6502;
-//! use r6502::cpu6502::CPU6502;
+//! use r6502::cpu6502::Cpu6502;
 //! use r6502::memory::SimpleMemory;
 //!
 //! fn main()
 //! {
 //!     let mut mem = SimpleMemory::new();
 //!     /* Initialize memory */
-//!     let mut cpu = CPU6502::new(mem);
+//!     let mut cpu = Cpu6502::new(mem);
 //!     loop
 //!     {
 //!         cpu.run(1).unwrap();
@@ -31,7 +31,7 @@ extern crate bitflags;
 
 #[cfg(test)]
 mod tests {
-    use cpu6502::CPU6502;
+    use cpu6502::Cpu6502;
     use memory::{SimpleMemory, Memory};
 
     use std::io::prelude::*;
@@ -55,7 +55,7 @@ mod tests {
         mem.write(0xFF03, 0x00 as u8);
         mem.write(0xFF04, 0xFF as u8);
 
-        let mut cpu = CPU6502::new(mem);
+        let mut cpu = Cpu6502::new(mem);
         cpu.reset();
         println!("{:?}\n", cpu);
         cpu.run(1).unwrap();
@@ -71,7 +71,7 @@ mod tests {
         let mut mem = SimpleMemory::new();
         let mut file = File::open("test_data/6502_functional_test.bin").unwrap();
         file.read(&mut mem.mem).unwrap();
-        let mut cpu = CPU6502::new(mem);
+        let mut cpu = Cpu6502::new(mem);
 
         let mut cycle_count = 0;
         let mut last_pc = 0x0000;

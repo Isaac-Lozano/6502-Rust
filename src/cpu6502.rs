@@ -160,33 +160,33 @@ impl fmt::Display for PS
 }
 
 /****************
- * CPU6502Error *
+ * Cpu6502Error *
  ****************/
 #[derive(Debug)]
-pub enum CPU6502Error
+pub enum Cpu6502Error
 {
     IllegalOpcode(u8),
 }
 
-impl fmt::Display for CPU6502Error
+impl fmt::Display for Cpu6502Error
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result
     {
         match *self
         {
-            CPU6502Error::IllegalOpcode(op) =>
+            Cpu6502Error::IllegalOpcode(op) =>
                 write!(fmt, "IllegalOpcode: 0x{:02X}", op),
         }
     }
 }
 
-impl Error for CPU6502Error
+impl Error for Cpu6502Error
 {
     fn description(&self) -> &str
     {
         match *self
         {
-            CPU6502Error::IllegalOpcode(_) =>
+            Cpu6502Error::IllegalOpcode(_) =>
                 "An llegal opcode was encountered"
         }
     }
@@ -195,21 +195,21 @@ impl Error for CPU6502Error
     {
         match *self
         {
-            CPU6502Error::IllegalOpcode(_) =>
+            Cpu6502Error::IllegalOpcode(_) =>
                 None,
         }
     }
 }
 
-pub type CPU6502Result<T> = Result<T, CPU6502Error>;
+pub type Cpu6502Result<T> = Result<T, Cpu6502Error>;
 
 /***********
- * CPU6502 *
+ * Cpu6502 *
  ***********/
 /* Bread and butter
  */
 /// 6502 CPU emulator
-pub struct CPU6502<M>
+pub struct Cpu6502<M>
 {
     /* Registers */
     pub x: u8,
@@ -226,16 +226,16 @@ pub struct CPU6502<M>
     pub cycles: u64,
 }
 
-impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
+impl<M: Memory<u8> + Memory<u16>> Cpu6502<M>
 {
-    /// Returns a new CPU6502<M>.
+    /// Returns a new Cpu6502<M>.
     ///
     /// # `Input`
     /// Takes in an object that implements the Memory trait. This object acts as
     /// the memory mapper for the cpu.
-    pub fn new(mem: M) -> CPU6502<M>
+    pub fn new(mem: M) -> Cpu6502<M>
     {
-        let mut cpu = CPU6502
+        let mut cpu = Cpu6502
         {
             x: 0,
             y: 0,
@@ -254,7 +254,7 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
     ///
     /// Will run instructions until the amount of cycles run passes `cycles`.
     /// Running this with `cycles` = 1 will run a single instruction.
-    pub fn run(&mut self, cycles: u32) -> CPU6502Result<u32>
+    pub fn run(&mut self, cycles: u32) -> Cpu6502Result<u32>
     {
         let mut passed: u32 = 0;
 
@@ -924,7 +924,7 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
 
     /* Meat and bones */
     /// Runs a single instruction.
-    pub fn run_opcode(&mut self) -> CPU6502Result<u32>
+    pub fn run_opcode(&mut self) -> Cpu6502Result<u32>
     {
         let op_val: u8 = self.memory.read(self.pc);
         let op_el: Opcode = OP_TABLE[op_val as usize];
@@ -1266,7 +1266,7 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
             },
             Operation::Unknown =>
             {
-                return Err(CPU6502Error::IllegalOpcode(op_val));
+                return Err(Cpu6502Error::IllegalOpcode(op_val));
             },
         }
 
@@ -1276,7 +1276,7 @@ impl<M: Memory<u8> + Memory<u16>> CPU6502<M>
     }
 }
 
-impl<M> fmt::Debug for CPU6502<M>
+impl<M> fmt::Debug for Cpu6502<M>
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result
     {
